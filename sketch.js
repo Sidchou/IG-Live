@@ -5,6 +5,13 @@ let views;
 let capture;
 let p = [];
 let emote;
+let pix;
+let pixCache = [];
+let tester = 0;
+let movements = 0;
+
+let likeRate=0.5; 
+
 
 function showDebug() {
   fill(0);
@@ -23,22 +30,31 @@ function setup() {
   capture = createCapture(VIDEO);
   capture.hide();
   //showDebug();
+  pix = createGraphics(unit * 5, unit * 10);
 }
 function windowResized() {
-  unit = windowSize * 0.1;
   windowSize = min(windowWidth, (windowHeight / 16) * 9);
+  unit = windowSize * 0.1;
   createCanvas(windowSize, (windowSize / 9) * 16);
+  pix = createGraphics(unit * 5, unit * 10);
 }
 
 function draw() {
   background(220);
   //showDebug();
 
-  image(capture, 
-        (width - (height / capture.height) * capture.width)/2,
-        0,
-        (height / capture.height) * capture.width, 
-        height);
+  image(
+    capture,
+    (width - (height / capture.height) * capture.width) / 2,
+    0,
+    (height / capture.height) * capture.width,
+    height
+  );
+
+  if (frameCount % 5 == 0) {
+    pixelMovements();
+  }
+  
 
   rectMode(CENTER);
   fill("#C0306E");
@@ -72,16 +88,31 @@ function draw() {
   textAlign(RIGHT, BOTTOM);
   text("...", unit * 8, height - unit * 0.7);
 
-  if (frameCount % 5 == 0) {
+  if (frameCount % 7 == 0) {
+    if(random() < likeRate){
     p.push(
       new Particles(
         width - unit * (0.7 + random(0, 0.4)),
         height - unit * (0.8 + random(0, 0.4)),
         unit,
-         random(0.2,0.5)
+        random(0.35, 0.5)
       )
     );
   }
+  }
+    if (frameCount % 3 == 0) {
+    if(random() < likeRate){
+    p.push(
+      new Particles(
+        width - unit * (0.7 + random(0, 0.4)),
+        height - unit * (0.8 + random(0, 0.4)),
+        unit,
+        random(0.1, 0.25)
+      )
+    );
+  }
+  }
+  
   for (let i = 0; i < p.length; i++) {
     p[i].gravity(false);
     p[i].resistant();
@@ -93,4 +124,27 @@ function draw() {
     }
   }
   //noLoop();
+}
+function pixelMovements()
+{
+    pix = createGraphics(unit * 4, unit * 8);
+    pix = get(unit * 2, unit * 4, unit * 4, unit * 8);
+    pix.filter(BLUR, 3);
+    pix.loadPixels();
+    //pix.pixelDensity(1);
+    movements = 0;
+
+    for (var i = 0; i < pix.width ; i+=5) {
+      for (var j = 0; j < pix.height ; j+=5) {
+        //movements +=  abs(floor((pixCache[ (i* pix.width + j) * 5] - pix.pixels[(i* pix.width + j) * 5])/10))
+        tester = pixCache[(i * pix.width + j) ]- pix.pixels[(i * pix.width + j) ]
+        if(tester > 0){
+        movements +=  abs(floor(tester/5));
+        }
+        pixCache[(i * pix.width + j) ] = pix.pixels[(i * pix.width + j) ];
+      }
+    }
+    //image(pix, unit * 2, unit * 4);
+    //console.log(movements);
+  likeRate = movements / 2000+0.2
 }
