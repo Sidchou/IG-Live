@@ -9,18 +9,40 @@ let pix;
 let pixCache = [];
 let tester = 0;
 let movements = 0;
-
-let likeRate=0.5; 
-
+let sampleRates = 5;
+let likeRate = 0.5;
+let isMobile = false;
 
 function showDebug() {
-  fill(0);
+  push();
+
+  textSize(12);
+  textAlign(LEFT, TOP);
+  fill(255);
   text("fps" + floor(frameRate()), 5, 10);
-  //text("size" + p.length, 5, 20);
+  text("movements " + movements, 5, 20);
+  text(likeRate, 5, 30);
+
+  pop();
+}
+
+function getDevice() {
+  let agent = window.navigator.userAgent;
+  if (
+    agent.match(/Android/i) ||
+    agent.match(/iPhone/i) ||
+    agent.match(/iPad/i)
+  ) {
+    isMobile = true;
+  }
+  if (isMobile) {
+    sampleRates = floor(unit);
+  }
 }
 function preload() {
   heart = loadImage("assets/heart.png");
   emote = loadImage("assets/heart-emote.png");
+  getDevice();
 }
 
 function setup() {
@@ -41,7 +63,6 @@ function windowResized() {
 
 function draw() {
   background(220);
-  //showDebug();
 
   image(
     capture,
@@ -54,7 +75,6 @@ function draw() {
   if (frameCount % 5 == 0) {
     pixelMovements();
   }
-  
 
   rectMode(CENTER);
   fill("#C0306E");
@@ -89,30 +109,30 @@ function draw() {
   text("...", unit * 8, height - unit * 0.7);
 
   if (frameCount % 7 == 0) {
-    if(random() < likeRate){
-    p.push(
-      new Particles(
-        width - unit * (0.7 + random(0, 0.4)),
-        height - unit * (0.8 + random(0, 0.4)),
-        unit,
-        random(0.35, 0.5)
-      )
-    );
+    if (random() < likeRate) {
+      p.push(
+        new Particles(
+          width - unit * (0.7 + random(0, 0.4)),
+          height - unit * (0.8 + random(0, 0.4)),
+          unit,
+          random(0.35, 0.5)
+        )
+      );
+    }
   }
+  if (frameCount % 3 == 0) {
+    if (random() < likeRate) {
+      p.push(
+        new Particles(
+          width - unit * (0.7 + random(0, 0.4)),
+          height - unit * (0.8 + random(0, 0.4)),
+          unit,
+          random(0.1, 0.25)
+        )
+      );
+    }
   }
-    if (frameCount % 3 == 0) {
-    if(random() < likeRate){
-    p.push(
-      new Particles(
-        width - unit * (0.7 + random(0, 0.4)),
-        height - unit * (0.8 + random(0, 0.4)),
-        unit,
-        random(0.1, 0.25)
-      )
-    );
-  }
-  }
-  
+
   for (let i = 0; i < p.length; i++) {
     p[i].gravity(false);
     p[i].resistant();
@@ -123,28 +143,37 @@ function draw() {
       p.splice(i, 1);
     }
   }
+  //showDebug();
   //noLoop();
 }
-function pixelMovements()
-{
-    pix = createGraphics(unit * 4, unit * 8);
-    pix = get(unit * 2, unit * 4, unit * 4, unit * 8);
-    pix.filter(BLUR, 3);
-    pix.loadPixels();
-    //pix.pixelDensity(1);
-    movements = 0;
 
-    for (var i = 0; i < pix.width ; i+=5) {
-      for (var j = 0; j < pix.height ; j+=5) {
-        //movements +=  abs(floor((pixCache[ (i* pix.width + j) * 5] - pix.pixels[(i* pix.width + j) * 5])/10))
-        tester = pixCache[(i * pix.width + j) ]- pix.pixels[(i * pix.width + j) ]
-        if(tester > 0){
-        movements +=  abs(floor(tester/5));
+function pixelMovements() {
+  pix = createGraphics(unit * 4, unit * 8);
+  pix = get(unit * 2, unit * 4, unit * 4, unit * 8);
+  pix.filter(BLUR, 3);
+  pix.loadPixels();
+  //pix.pixelDensity(1);
+  movements = 0;
+
+  for (var i = 0; i < pix.width; i += sampleRates) {
+    for (var j = 0; j < pix.height; j += sampleRates) {
+      //movements +=  abs(floor((pixCache[ (i* pix.width + j) * 5] - pix.pixels[(i* pix.width + j) * 5])/10))
+      tester = pixCache[i * pix.width + j] - pix.pixels[i * pix.width + j];
+      if (tester > 0) {
+        if (isMobile) {
+          movements += tester;
+        } else {
+          movements += abs(floor(tester / 5));
         }
-        pixCache[(i * pix.width + j) ] = pix.pixels[(i * pix.width + j) ];
       }
+      pixCache[i * pix.width + j] = pix.pixels[i * pix.width + j];
     }
-    //image(pix, unit * 2, unit * 4);
-    //console.log(movements);
-  likeRate = movements / 2000+0.2
+  }
+  //image(pix, unit * 2, unit * 4);
+  //console.log(movements);
+  if (isMobile) {
+    likeRate = movements / 5 + 0.2;
+  } else {
+    likeRate = movements / 2000 + 0.2;
+  }
 }
